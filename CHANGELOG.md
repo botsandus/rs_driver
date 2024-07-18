@@ -2,8 +2,37 @@
 
 ## Unreleased
 
-### Changed 
+## v1.5.14 2024-07-15
+### Added
+- Support multiple lidars with different multicast addresses and the same port.
+### Fixed
+- Fixed the bug that only one lidar was parsed correctly when multiple bp4.0 were used.
 
+## v1.5.13 2024-05-10
+### Added
+- Support RSMX.
+### Fixed
+- Update timestamp parsing unit and the number of packets per frame in decoder_RSE1.
+- Update firing_tss of Helios/Helios16P/RubyPlus.
+- Fix compilation bug of unit test.
+
+## v1.5.12 2023-12-28
+### Fixed
+- Fix bug in getting device info and status.
+- Fix bug in getting device temperature.
+
+## v1.5.11 2023-12-18
+
+### Added
+- Split frame at the end of frame.
+
+### Changed
+- Enable modify socket buffer size.
+
+### Fixed
+- Fix the bug of rs_drvier_viewer.cpp abnormal crash.
+- Fix fir_tss of RSBPV4.
+- Fix rotation direction of RSBPV4 when reversal.
 
 ## v1.5.10 2023-04-11
 

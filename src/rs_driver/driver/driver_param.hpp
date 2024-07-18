@@ -35,7 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rs_driver/common/rs_log.hpp>
 #include <string>
 #include <map>
-
+#include <cstring>
 namespace robosense
 {
 namespace lidar
@@ -61,6 +61,7 @@ enum LidarType  ///< LiDAR type
   RSM1 = RS_MEMS,
   RSM2,
   RSE1,
+  RSMX,
 
   // jumbo
   RS_JUMBO = 0x100,
@@ -128,6 +129,9 @@ inline std::string lidarTypeToStr(const LidarType& type)
       break;
     case LidarType::RSE1:
       str = "RSE1";
+      break;
+    case LidarType::RSMX:
+      str = "RSMX";
       break;
     case LidarType::RSM1_JUMBO:
       str = "RSM1_JUMBO";
@@ -197,6 +201,10 @@ inline LidarType strToLidarType(const std::string& type)
   {
     return LidarType::RSE1;
   }
+  else if (type == "RSMX")
+  {
+    return LidarType::RSMX;
+  }
   else if (type == "RSM1_JUMBO")
   {
     return LidarType::RSM1_JUMBO;
@@ -205,7 +213,7 @@ inline LidarType strToLidarType(const std::string& type)
   {
     RS_ERROR << "Wrong lidar type: " << type << RS_REND;
     RS_ERROR << "Please give correct type: RS16, RS32, RSBP, RSHELIOS, RSHELIOS_16P, RS48, RS80, RS128, RSP128, RSP80, RSP48, "
-             << "RSM1, RSM1_JUMBO, RSM2, RSE1." 
+             << "RSM1, RSM1_JUMBO, RSM2, RSE1, RSMX." 
              << RS_REND;
     exit(-1);
   }
@@ -323,6 +331,7 @@ struct RSInputParam  ///< The LiDAR input parameter
   bool use_vlan = false;                       ///< Vlan on-off
   uint16_t user_layer_bytes = 0;    ///< Bytes of user layer. thers is no user layer if it is 0
   uint16_t tail_layer_bytes = 0;    ///< Bytes of tail layer. thers is no tail layer if it is 0
+  uint32_t socket_recv_buf = 106496;   //  <Bytes of socket receive buffer. 
 
   void print() const
   {
@@ -338,6 +347,7 @@ struct RSInputParam  ///< The LiDAR input parameter
     RS_INFOL << "use_vlan: " << use_vlan << RS_REND;
     RS_INFOL << "user_layer_bytes: " << user_layer_bytes << RS_REND;
     RS_INFOL << "tail_layer_bytes: " << tail_layer_bytes << RS_REND;
+    RS_INFOL << "socket_recv_buf: " << socket_recv_buf << RS_REND;
     RS_INFO << "------------------------------------------------------" << RS_REND;
   }
 
@@ -368,15 +378,63 @@ struct RSDriverParam  ///< The LiDAR driver parameter
 
 struct DeviceInfo
 {
+  DeviceInfo()
+  {
+      init();
+  }
   uint8_t sn[6];
   uint8_t mac[6];
   uint8_t top_ver[5];
   uint8_t bottom_ver[5];
+  bool state;
+  
+  void init()
+  {
+    memset(sn, 0, sizeof(sn));
+    memset(mac, 0, sizeof(mac));
+    memset(top_ver, 0, sizeof(top_ver));
+    memset(bottom_ver, 0, sizeof(bottom_ver));
+    state = false;
+  }
+
+  DeviceInfo& operator=(const DeviceInfo& other)
+  {
+    if (this != &other) 
+    {
+      memcpy(sn, other.sn, sizeof(sn));
+      memcpy(mac, other.mac, sizeof(mac));
+      memcpy(top_ver, other.top_ver, sizeof(top_ver));
+      memcpy(bottom_ver, other.bottom_ver, sizeof(bottom_ver));
+      state = other.state;
+    }
+    return *this;
+  }
 };
 
 struct DeviceStatus
 {
+  DeviceStatus()
+  {
+      init();
+  }
   float voltage = 0.0f;
+    bool state;
+  
+  void init()
+  {
+    voltage = 0.0f;
+    state = false;
+  }
+
+  DeviceStatus& operator=(const DeviceStatus& other)
+  {
+    if (this != &other) 
+    {
+      voltage = other.voltage;
+      state = other.state;
+    }
+    return *this;
+  }
 };
 
 }  // namespace lidar

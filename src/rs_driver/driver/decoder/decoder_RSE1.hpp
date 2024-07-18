@@ -84,7 +84,7 @@ class DecoderRSE1 : public Decoder<T_PointCloud>
 public:
 
   constexpr static double FRAME_DURATION = 0.1;
-  constexpr static uint32_t SINGLE_PKT_NUM = 112;
+  constexpr static uint32_t SINGLE_PKT_NUM = 288;
   constexpr static int VECTOR_BASE = 32768;
 
   virtual void decodeDifopPkt(const uint8_t* pkt, size_t size);
@@ -160,7 +160,7 @@ inline bool DecoderRSE1<T_PointCloud>::decodeMsopPkt(const uint8_t* packet, size
   bool ret = false;
 
   this->temperature_ = static_cast<float>((int)pkt.header.temperature - this->const_param_.TEMPERATURE_RES);
-
+  this->is_get_temperature_ = true;
   double pkt_ts = 0;
   if (this->param_.use_lidar_clock)
   {
@@ -175,7 +175,7 @@ inline bool DecoderRSE1<T_PointCloud>::decodeMsopPkt(const uint8_t* packet, size
 
     if (this->write_pkt_ts_)
     {
-      createTimeUTCWithUs (ts, (RSTimestampUTC*)&pkt.header.timestamp);
+      createTimeUTCWithUs(ts, (RSTimestampUTC*)&pkt.header.timestamp);
     }
   }
 
@@ -191,7 +191,7 @@ inline bool DecoderRSE1<T_PointCloud>::decodeMsopPkt(const uint8_t* packet, size
   {
     const RSEOSBlock& block = pkt.blocks[blk];
 
-    double point_time = pkt_ts + ntohs(block.time_offset) * 1e-6;
+    double point_time = pkt_ts + ntohs(block.time_offset) * 1e-9;
 
     for (uint16_t chan = 0; chan < this->const_param_.CHANNELS_PER_BLOCK; chan++)
     {
