@@ -50,6 +50,8 @@ struct RSDecoderMechConstParam
   float RY;
   float RZ;
 
+
+
   // firing_ts/chan_ts
   double BLOCK_DURATION;
   double CHAN_TSS[128];
@@ -111,7 +113,7 @@ inline DecoderMech<T_PointCloud>::DecoderMech(const RSDecoderMechConstParam& con
   , rps_(10)
   , blks_per_frame_((uint16_t)(1 / (10 * this->mech_const_param_.BLOCK_DURATION)))
   , split_blks_per_frame_(blks_per_frame_)
-  , block_az_diff_(20)
+  , block_az_diff_(40)
   , fov_blind_ts_diff_(0.0)
 {
   this->packet_duration_ = 
@@ -161,8 +163,6 @@ inline void DecoderMech<T_PointCloud>::print()
     << "fov_blind_ts_diff:\t" << this->fov_blind_ts_diff_ << std::endl
     << "angle_from_file:\t" << this->param_.config_from_file << std::endl
     << "angles_ready:\t\t" << this->angles_ready_ << std::endl;
-
-  this->chan_angles_.print();
 }
 
 template <typename T_PointCloud>
@@ -201,16 +201,19 @@ inline void DecoderMech<T_PointCloud>::decodeDifopCommon(const T_Difop& pkt)
     int ret = this->chan_angles_.loadFromDifop(pkt.vert_angle_cali, pkt.horiz_angle_cali);
     this->angles_ready_ = (ret == 0);
   }
+    // this->chan_angles_.print();
 
+  
 #ifdef ENABLE_DIFOP_PARSE
   // device info
-  memcpy (this->device_info_.sn, pkt.sn.num, 6);
-  memcpy (this->device_info_.mac, pkt.eth.mac_addr, 6);
-  memcpy (this->device_info_.top_ver, pkt.version.top_ver, 5);
-  memcpy (this->device_info_.bottom_ver, pkt.version.bottom_ver, 5);
-
-  // device status
-  this->device_status_.voltage = ntohs(pkt.status.vol_12v);
+  // memcpy (this->device_info_.sn, pkt.sn.num, 6);
+  // memcpy (this->device_info_.mac, pkt.eth.mac_addr, 6);
+  // memcpy (this->device_info_.top_ver, pkt.version.top_ver, 5);
+  // memcpy (this->device_info_.bottom_ver, pkt.version.bottom_ver, 5);
+  // this->device_info_.state = true;
+  // // device status
+  // this->device_status_.voltage = ntohs(pkt.status.vol_12v);
+  // this->device_status_.state = true;
 #endif
 }
 

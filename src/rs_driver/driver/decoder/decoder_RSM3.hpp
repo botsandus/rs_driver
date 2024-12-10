@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-#include <rs_driver/driver/decoder/decoder.hpp>
+#include <rs_driver/driver/decoder/decoder_RSM1.hpp>
 
 namespace robosense
 {
@@ -42,94 +42,80 @@ namespace lidar
 
 typedef struct
 {
-  uint8_t id[4];
-  uint16_t pkt_seq;
-  uint16_t protocol_version;
-  uint8_t return_mode;
-  uint8_t time_mode;
-  RSTimestampUTC timestamp;
-  uint8_t reserved[10];
-  uint8_t lidar_type;
-  uint8_t temperature;
-} RSM2MsopHeader;
-
-typedef struct
-{
   uint16_t distance;
   int16_t x;
   int16_t y;
   int16_t z;
   uint8_t intensity;
   uint8_t point_attribute;
-} RSM2Channel;
+} RSM3Channel;
 
 typedef struct
 {
-  uint8_t time_offset;
-  uint8_t return_seq;
-  RSM2Channel channel[5];
-} RSM2Block;
+  uint16_t time_offset;
+  RSM3Channel channel[28];
+} RSM3Block;
 
 typedef struct
 {
-  RSM2MsopHeader header;
-  RSM2Block blocks[25];
-  uint8_t reserved[4];
+  RSM1MsopHeader header;
+  RSM3Block blocks[5];
+  uint8_t tail[2];
   uint8_t crc32[4];
-  uint8_t rolling_counter[2];
-} RSM2MsopPkt;
+} RSM3MsopPkt;
 
+typedef struct
+{
+  uint8_t id[8];
+  RSSN sn;
+  uint8_t reserved1[96];
+  RSTimeInfo time_info;
+  uint8_t reserved2[390];
+} RRSM3DifopPkt;
 #pragma pack(pop)
-
 template <typename T_PointCloud>
-class DecoderRSM2 : public Decoder<T_PointCloud>
+class DecoderRSM3 :public Decoder<T_PointCloud>
 {
 public:
-
   constexpr static double FRAME_DURATION = 0.1;
-  constexpr static uint32_t SINGLE_PKT_NUM = 1260;
-  constexpr static int VECTOR_BASE = 32768;
-
-  virtual void decodeDifopPkt(const uint8_t* pkt, size_t size);
+  constexpr static uint32_t SINGLE_PKT_NUM = 2270;
+  constexpr static int VECTOR_BASE = 32768; // 2^15
   virtual bool decodeMsopPkt(const uint8_t* pkt, size_t size);
-  virtual ~DecoderRSM2() = default;
+  virtual void decodeDifopPkt(const uint8_t* pkt, size_t size);
+  virtual ~DecoderRSM3() = default;
 
-  explicit DecoderRSM2(const RSDecoderParam& param);
+  explicit DecoderRSM3(const RSDecoderParam& param);
 
 private:
 
   static RSDecoderConstParam& getConstParam();
-  RSEchoMode getEchoMode(uint8_t mode);
-
-  SplitStrategyBySeq split_strategy_;
+   SplitStrategyBySeq split_strategy_;
 };
-
 template <typename T_PointCloud>
-inline RSDecoderConstParam& DecoderRSM2<T_PointCloud>::getConstParam()
+inline RSDecoderConstParam& DecoderRSM3<T_PointCloud>::getConstParam()
 {
-  static RSDecoderConstParam param = 
+  static RSDecoderConstParam param =
   {
-    1342 // msop len
-      , 256 // difop len
+    1448 // msop len
+      , 512 // difop len
       , 4 // msop id len
       , 8 // difop id len
       , {0x55, 0xAA, 0x5A, 0xA5} // msop id
     , {0xA5, 0xFF, 0x00, 0x5A, 0x11, 0x11, 0x55, 0x55} // difop id
     , {0x00, 0x00}
-    , 5  // laser number
-    , 25 // blocks per packet
-      , 5 // channels per block
-      , 0.2f // distance min
-      , 250.0f // distance max
+    , 28  // laser number
+    , 5 // blocks per packet
+      , 28 // channels per block
+      , 0.1f // distance min
+      , 300.0f // distance max
       , 0.005f // distance resolution
       , 80.0f // initial value of temperature 
   };
 
   return param;
 }
-
 template <typename T_PointCloud>
-inline DecoderRSM2<T_PointCloud>::DecoderRSM2(const RSDecoderParam& param)
+inline DecoderRSM3<T_PointCloud>::DecoderRSM3(const RSDecoderParam& param)
   : Decoder<T_PointCloud>(getConstParam(), param)
 {
   this->packet_duration_ = FRAME_DURATION / SINGLE_PKT_NUM;
@@ -137,48 +123,28 @@ inline DecoderRSM2<T_PointCloud>::DecoderRSM2(const RSDecoderParam& param)
 }
 
 template <typename T_PointCloud>
-inline RSEchoMode DecoderRSM2<T_PointCloud>::getEchoMode(uint8_t mode)
+inline void DecoderRSM3<T_PointCloud>::decodeDifopPkt(const uint8_t* packet, size_t size)
 {
-  switch (mode)
-  {
-    case 0x00: // dual return
-      return RSEchoMode::ECHO_DUAL;
-    case 0x04: // strongest return
-    case 0x05: // last return
-    case 0x06: // first return
-    default:
-      return RSEchoMode::ECHO_SINGLE;
-  }
-}
-
-template <typename T_PointCloud>
-inline void DecoderRSM2<T_PointCloud>::decodeDifopPkt(const uint8_t* packet, size_t size)
-{
-  const RSM1DifopPkt& pkt = *(RSM1DifopPkt*)packet;
-  this->echo_mode_ = this->getEchoMode(pkt.return_mode);
-
 #ifdef ENABLE_DIFOP_PARSE
-  // device info
-  memcpy (this->device_info_.sn, pkt.sn.num, 6);
-  memcpy (this->device_info_.mac, pkt.eth.mac_addr, 6);
-  memcpy (this->device_info_.top_ver, pkt.version.pl_ver, 5);
-  memcpy (this->device_info_.bottom_ver, pkt.version.ps_ver, 5);
-  this->device_info_.state = true;
-  // device status
-  this->device_status_.voltage = ntohs(pkt.status.voltage_1);
-  this->device_status_.state = true;
-  
+  const RRSM3DifopPkt& pkt = *(RRSM3DifopPkt*)packet;
+  double difop_pkt_ts = parseTimeUTCWithUs(&pkt.time_info.timestamp) * 1e-6;
+  if(0)
+  {
+    RS_DEBUG << "difop_pkt_ts:" << difop_pkt_ts << RS_REND;
+  }
 #endif
 }
 
+
 template <typename T_PointCloud>
-inline bool DecoderRSM2<T_PointCloud>::decodeMsopPkt(const uint8_t* packet, size_t size)
+inline bool DecoderRSM3<T_PointCloud>::decodeMsopPkt(const uint8_t* packet, size_t size)
 {
-  const RSM2MsopPkt& pkt = *(RSM2MsopPkt*)packet;
+
+  const RSM3MsopPkt& pkt = *(RSM3MsopPkt*)packet;
   bool ret = false;
 
   this->temperature_ = static_cast<float>((int)pkt.header.temperature - this->const_param_.TEMPERATURE_RES);
-  this->is_get_temperature_ = true;
+
   double pkt_ts = 0;
   if (this->param_.use_lidar_clock)
   {
@@ -193,13 +159,14 @@ inline bool DecoderRSM2<T_PointCloud>::decodeMsopPkt(const uint8_t* packet, size
 
     if (this->write_pkt_ts_)
     {
-      createTimeUTCWithUs (ts, (RSTimestampUTC*)&pkt.header.timestamp);
+      createTimeUTCWithUs(ts, (RSTimestampUTC*)&pkt.header.timestamp);
     }
   }
 
   uint16_t pkt_seq = ntohs(pkt.header.pkt_seq);
   if (split_strategy_.newPacket(pkt_seq))
   {
+    
     this->cb_split_frame_(this->const_param_.LASER_NUM, this->cloudTs());
     this->first_point_ts_ = pkt_ts;
     ret = true;
@@ -207,18 +174,19 @@ inline bool DecoderRSM2<T_PointCloud>::decodeMsopPkt(const uint8_t* packet, size
 
   for (uint16_t blk = 0; blk < this->const_param_.BLOCKS_PER_PKT; blk++)
   {
-    const RSM2Block& block = pkt.blocks[blk];
+    const RSM3Block& block = pkt.blocks[blk];
 
-    double point_time = pkt_ts + block.time_offset * 1e-6;
+    double point_time = pkt_ts + ntohs(block.time_offset) * 1e-6;
 
     for (uint16_t chan = 0; chan < this->const_param_.CHANNELS_PER_BLOCK; chan++)
     {
-      const RSM2Channel& channel = block.channel[chan];
+      const RSM3Channel& channel = block.channel[chan];
 
       float distance = ntohs(channel.distance) * this->const_param_.DISTANCE_RES;
 
       if (this->distance_section_.in(distance))
       {
+
         int16_t vector_x = RS_SWAP_INT16(channel.x);
         int16_t vector_y = RS_SWAP_INT16(channel.y);
         int16_t vector_z = RS_SWAP_INT16(channel.z);
@@ -254,6 +222,7 @@ inline bool DecoderRSM2<T_PointCloud>::decodeMsopPkt(const uint8_t* packet, size
     }
 
     this->prev_point_ts_ = point_time;
+   
   }
 
   this->prev_pkt_ts_ = pkt_ts;

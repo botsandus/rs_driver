@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rs_driver/driver/decoder/decoder_RS16.hpp>
 #include <rs_driver/driver/decoder/decoder_RS32.hpp>
 #include <rs_driver/driver/decoder/decoder_RSBP.hpp>
+#include <rs_driver/driver/decoder/decoder_RSAIRY.hpp>
 #include <rs_driver/driver/decoder/decoder_RSHELIOS.hpp>
 #include <rs_driver/driver/decoder/decoder_RSHELIOS_16P.hpp>
 #include <rs_driver/driver/decoder/decoder_RS128.hpp>
@@ -46,8 +47,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rs_driver/driver/decoder/decoder_RSP48.hpp>
 #include <rs_driver/driver/decoder/decoder_RSM1.hpp>
 #include <rs_driver/driver/decoder/decoder_RSM2.hpp>
+#include <rs_driver/driver/decoder/decoder_RSM3.hpp>
 #include <rs_driver/driver/decoder/decoder_RSE1.hpp>
 #include <rs_driver/driver/decoder/decoder_RSM1_Jumbo.hpp>
+#include <rs_driver/driver/decoder/decoder_RSMX.hpp>
 
 namespace robosense
 {
@@ -80,6 +83,9 @@ inline std::shared_ptr<Decoder<T_PointCloud>> DecoderFactory<T_PointCloud>::crea
     case LidarType::RSBP:
       ret_ptr = std::make_shared<DecoderRSBP<T_PointCloud>>(param);
       break;
+    case LidarType::RSAIRY:
+      ret_ptr = std::make_shared<DecoderRSAIRY<T_PointCloud>>(param);
+      break;
     case LidarType::RSHELIOS:
       ret_ptr = std::make_shared<DecoderRSHELIOS<T_PointCloud>>(param);
       break;
@@ -110,11 +116,17 @@ inline std::shared_ptr<Decoder<T_PointCloud>> DecoderFactory<T_PointCloud>::crea
     case LidarType::RSM2:
       ret_ptr = std::make_shared<DecoderRSM2<T_PointCloud>>(param);
       break;
+	case LidarType::RSM3:
+      ret_ptr = std::make_shared<DecoderRSM3<T_PointCloud>>(param);
+      break;
     case LidarType::RSE1:
       ret_ptr = std::make_shared<DecoderRSE1<T_PointCloud>>(param);
       break;
     case LidarType::RSM1_JUMBO:
       ret_ptr = std::make_shared<DecoderRSM1_Jumbo<T_PointCloud>>(param);
+      break;
+    case LidarType::RSMX:
+      ret_ptr = std::make_shared<DecoderRSMX<T_PointCloud>>(param);
       break;
     default:
       RS_ERROR << "Wrong LiDAR Type. Please check your LiDAR Version! " << RS_REND;

@@ -38,7 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rs_driver/driver/decoder/trigon.hpp>
 #include <rs_driver/driver/decoder/section.hpp>
 #include <rs_driver/driver/decoder/basic_attr.hpp>
-
+#include "rs_driver/msg/imu_data_msg.hpp"
 #ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES // for VC++, required to use const M_IP in <math.h>
 #endif
@@ -217,6 +217,7 @@ enum RSEchoMode
 // decoder const param
 struct RSDecoderConstParam
 {
+
   // packet len
   uint16_t MSOP_LEN;
   uint16_t DIFOP_LEN;
@@ -256,26 +257,29 @@ public:
 
   virtual void decodeDifopPkt(const uint8_t* pkt, size_t size) = 0;
   virtual bool decodeMsopPkt(const uint8_t* pkt, size_t size) = 0;
+  virtual void decodeImuPkt(const uint8_t* pkt, size_t size){};
   virtual ~Decoder() = default;
 
   void processDifopPkt(const uint8_t* pkt, size_t size);
   bool processMsopPkt(const uint8_t* pkt, size_t size);
+  bool processImuPkt(const uint8_t* pkt, size_t size);
 
   explicit Decoder(const RSDecoderConstParam& const_param, const RSDecoderParam& param);
 
-  float getTemperature();
+  bool getTemperature(float& temp);
   bool getDeviceInfo(DeviceInfo& info);
   bool getDeviceStatus(DeviceStatus& status);
   double getPacketDuration();
   void enableWritePktTs(bool value);
   double prevPktTs();
   void transformPoint(float& x, float& y, float& z);
-
   void regCallback(
       const std::function<void(const Error&)>& cb_excep,
       const std::function<void(uint16_t, double)>& cb_split_frame);
+  void regImuCallback(const std::function<void()>& cb_imu_data);
 
   std::shared_ptr<T_PointCloud> point_cloud_; // accumulated point cloud currently
+  std::shared_ptr<ImuData> imuDataPtr_;
 
 #ifndef UNIT_TEST
 protected:
@@ -287,7 +291,14 @@ protected:
   RSDecoderParam param_; // user param
   std::function<void(uint16_t, double)> cb_split_frame_;
   std::function<void(const Error&)> cb_excep_;
+  std::function<void()> cb_imu_data_;
   bool write_pkt_ts_;
+
+
+  uint16_t IMU_LEN{0};
+  uint16_t IMU_ID_LEN{0};
+  uint8_t IMU_ID[4]{0};
+
 
 #ifdef ENABLE_TRANSFORM
   Eigen::Matrix4d trans_;
@@ -309,6 +320,7 @@ protected:
   double prev_pkt_ts_; // timestamp of prevous packet
   double prev_point_ts_; // timestamp of previous point
   double first_point_ts_; // timestamp of first point
+  bool is_get_temperature_{false};
 };
 
 template <typename T_PointCloud>
@@ -318,6 +330,11 @@ inline void Decoder<T_PointCloud>::regCallback(
 {
   cb_excep_ = cb_excep;
   cb_split_frame_ = cb_split_frame;
+}
+template <typename T_PointCloud>
+inline void Decoder<T_PointCloud>::regImuCallback(const std::function<void()>& cb_imu_data)
+{
+  cb_imu_data_ = cb_imu_data;
 }
 
 template <typename T_PointCloud>
@@ -351,22 +368,37 @@ inline void Decoder<T_PointCloud>::enableWritePktTs(bool value)
 }
 
 template <typename T_PointCloud>
-inline float Decoder<T_PointCloud>::getTemperature()
+inline bool Decoder<T_PointCloud>::getTemperature(float& temp)
 {
-  return temperature_;
+  if(!is_get_temperature_)
+  {
+    return false;
+  }
+
+  temp = temperature_;
+  return true;
 }
 
 template <typename T_PointCloud>
 inline bool Decoder<T_PointCloud>::getDeviceInfo(DeviceInfo& info)
 {
-  memcpy (&info, &device_info_, sizeof(DeviceInfo));
+  if(!device_info_.state)
+  {
+    return false;
+  }
+  info = device_info_;
   return true;
 }
 
 template <typename T_PointCloud>
 inline bool Decoder<T_PointCloud>::getDeviceStatus(DeviceStatus& status)
 {
-  memcpy (&status, &device_status_, sizeof(DeviceStatus));
+  if(!device_status_.state)
+  {
+    return false;
+  }
+  status = device_status_;
+  device_status_.init();
   return true;
 }
 
@@ -416,6 +448,24 @@ inline void Decoder<T_PointCloud>::processDifopPkt(const uint8_t* pkt, size_t si
   }
 
   decodeDifopPkt(pkt, size);
+}
+template <typename T_PointCloud>
+inline bool Decoder<T_PointCloud>::processImuPkt(const uint8_t* pkt, size_t size)
+{
+  if (size != this->IMU_LEN)
+  {
+     LIMIT_CALL(this->cb_excep_(Error(ERRCODE_WRONGIMULEN)), 1);
+     return false;
+  }
+
+  if (memcmp(pkt, this->IMU_ID, this->IMU_ID_LEN) != 0)
+  {
+    LIMIT_CALL(this->cb_excep_(Error(ERRCODE_WRONGIMUID)), 1);
+    return false;
+  }
+
+  decodeImuPkt(pkt, size);
+  return true;
 }
 
 template <typename T_PointCloud>

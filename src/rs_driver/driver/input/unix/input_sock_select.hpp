@@ -40,7 +40,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
-
 namespace robosense
 {
 namespace lidar
@@ -66,7 +65,7 @@ private:
 
 protected:
   size_t pkt_buf_len_;
-  int fds_[2];
+  int fds_[3]{-1};
   size_t sock_offset_;
   size_t sock_tail_;
 };
@@ -78,7 +77,7 @@ inline bool InputSock::init()
     return true;
   }
 
-  int msop_fd = -1, difop_fd = -1;
+  int msop_fd = -1, difop_fd = -1, imu_fd = -1;
 
   msop_fd = createSocket(input_param_.msop_port, input_param_.host_address, input_param_.group_address);
   if (msop_fd < 0)
@@ -90,12 +89,23 @@ inline bool InputSock::init()
     if (difop_fd < 0)
       goto failDifop;
   }
-
   fds_[0] = msop_fd;
   fds_[1] = difop_fd;
 
+  if ((input_param_.imu_port != 0) && (input_param_.imu_port != input_param_.msop_port) &&  (input_param_.imu_port != input_param_.difop_port))
+  {
+    imu_fd = createSocket(input_param_.imu_port, input_param_.host_address, input_param_.group_address);
+    if (imu_fd < 0)
+      goto failImu;
+  }
+
+  fds_[2] = imu_fd;
+  
   init_flag_ = true;
   return true;
+
+failImu:
+  close(difop_fd);
 
 failDifop:
   close(msop_fd);
@@ -130,6 +140,9 @@ inline InputSock::~InputSock()
   close(fds_[0]);
   if (fds_[1] >= 0)
     close(fds_[1]);
+  
+  if(fds_[2] >= 0)
+    close(fds_[2]);
 }
 
 inline int InputSock::createSocket(uint16_t port, const std::string& hostIp, const std::string& grpIp)
@@ -161,6 +174,10 @@ inline int InputSock::createSocket(uint16_t port, const std::string& hostIp, con
   {
     inet_pton(AF_INET, hostIp.c_str(), &(host_addr.sin_addr));
   }
+  if (hostIp != "0.0.0.0" && grpIp != "0.0.0.0")
+  {
+    inet_pton(AF_INET, grpIp.c_str(), &(host_addr.sin_addr));
+  }
 
   ret = bind(fd, (struct sockaddr*)&host_addr, sizeof(host_addr));
   if (ret < 0)
@@ -189,13 +206,19 @@ inline int InputSock::createSocket(uint16_t port, const std::string& hostIp, con
     }
   }
 
-#ifdef ENABLE_DOUBLE_RCVBUF
+#ifdef ENABLE_MODIFY_RECVBUF
   {
-    uint32_t opt_val;
+    uint32_t opt_val = input_param_.socket_recv_buf, before_set_val,after_set_val = 0;
+    if(opt_val < 1024)
+    {
+      opt_val = 106496;
+    }
     socklen_t opt_len = sizeof(uint32_t);
-    getsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char*)&opt_val, &opt_len);
-    opt_val *= 4;
+    getsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char*)&before_set_val, &opt_len);
+    // RS_INFO << "before: recv buf opt_val:" <<before_set_val << std::endl;
     setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char*)&opt_val, opt_len);
+    getsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char*)&after_set_val, &opt_len);
+    // RS_INFO << "aftert: recv buf opt_val:" <<after_set_val << std::endl;
   }
 #endif
 
@@ -222,7 +245,8 @@ failSocket:
 
 inline void InputSock::recvPacket()
 {
-  int max_fd = ((fds_[0] > fds_[1]) ? fds_[0] : fds_[1]);
+
+  int max_fd = std::max(std::max(fds_[0], fds_[1]), fds_[2]);
 
   while (!to_exit_recv_)
   {
@@ -232,6 +256,10 @@ inline void InputSock::recvPacket()
     if (fds_[1] >= 0)
       FD_SET(fds_[1], &rfds);
 
+    if(fds_[2] >= 0)
+    {
+      FD_SET(fds_[2], &rfds);
+    }
     struct timeval tv;
     tv.tv_sec = 1;
     tv.tv_usec = 0;
@@ -250,7 +278,7 @@ inline void InputSock::recvPacket()
       break;
     }
 
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 3; i++)
     {
       if ((fds_[i] >= 0) && FD_ISSET(fds_[i], &rfds))
       {
@@ -262,7 +290,7 @@ inline void InputSock::recvPacket()
           break;
         }
         else if (ret > 0)
-        {
+        { 
           pkt->setData(sock_offset_, ret - sock_offset_ - sock_tail_);
           pushPacket(pkt);
         }
@@ -273,3 +301,5 @@ inline void InputSock::recvPacket()
 
 }  // namespace lidar
 }  // namespace robosense
+
+

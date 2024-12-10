@@ -66,11 +66,14 @@ enum ErrCode
   ERRCODE_PKTBUFOVERFLOW  = 0x48,  ///< Packet queue is overflow
   ERRCODE_CLOUDOVERFLOW   = 0x49,  ///< Point cloud buffer is overflow
   ERRCODE_WRONGCRC32      = 0x4A,  ///< Wrong CRC32 value of MSOP Packet
+  ERRCODE_WRONGIMULEN   = 0x4B,  ///< Imu Packet length is wrong
+  ERRCODE_WRONGIMUID    = 0x4C,  ///< Imu Packet ID is wrong
 
   // error
   ERRCODE_STARTBEFOREINIT = 0x80,  ///< User calls start() before init()
   ERRCODE_PCAPWRONGPATH   = 0x81,  ///< Path of pcap file is wrong
-  ERRCODE_POINTCLOUDNULL  = 0x82   ///< User provided PointCloud buffer is invalid
+  ERRCODE_POINTCLOUDNULL  = 0x82,   ///< User provided PointCloud buffer is invalid
+  ERRCODE_IMUDATANULL  = 0x83,   ///< User provided ImuData buffer is invalid
 };
 
 struct Error
@@ -132,6 +135,10 @@ struct Error
         return "ERRCODE_CLOUDOVERFLOW";
       case ERRCODE_WRONGCRC32:
         return "ERRCODE_WRONGCRC32";
+      case ERRCODE_WRONGIMULEN:
+        return "ERRCODE_WRONGIMULEN";
+      case ERRCODE_WRONGIMUID:
+        return "ERRCODE_WRONGIMUID";
 
       // error
       case ERRCODE_STARTBEFOREINIT:
@@ -140,6 +147,8 @@ struct Error
         return "ERRCODE_PCAPWRONGPATH";
       case ERRCODE_POINTCLOUDNULL:
         return "ERRCODE_POINTCLOUDNULL";
+      case ERRCODE_IMUDATANULL:
+        return "ERRCODE_IMUDATANULL";
 
       //default
       default:

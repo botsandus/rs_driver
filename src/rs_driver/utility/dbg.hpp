@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 #include <stdio.h>
-
+#include <cstring>  
 namespace robosense
 {
 namespace lidar
@@ -51,6 +51,31 @@ inline void hexdump(const uint8_t* data, size_t size, const char* desc = NULL)
 
   printf("\n---------------------------------\n");
 }
+inline bool isLittleEndian() {
+    uint16_t num = 0x0102;  
+    uint8_t *bytePtr = reinterpret_cast<uint8_t*>(&num);
+    return (bytePtr[0] == 0x02);
+}
+inline int32_t u8ArrayToInt32(const uint8_t* data, uint8_t len,  bool is_little_endian) {
+    int32_t s32Data = 0;
+    if(len != 4)
+    {
+      return 0;
+    }
+    if(is_little_endian)
+    {
+      s32Data = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+    }else{
+      s32Data = (data[3] << 24) | (data[2] << 16) | (data[1] << 8) | data[0];
+    }
+    return s32Data;
+}
+inline float convertUint32ToFloat(uint32_t byteArray) {
+    float floatValue;
+    std::memcpy(&floatValue, &byteArray, sizeof(float));
+    return floatValue;
+}
+
 
 }  // namespace lidar
 }  // namespace robosense

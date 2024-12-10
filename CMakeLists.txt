@@ -6,7 +6,7 @@ if(WIN32)
   cmake_policy(SET CMP0074 NEW) # CMake 3.12 required
 endif(WIN32)
 
-project(rs_driver VERSION 1.5.10)
+project(rs_driver VERSION 1.5.16)
 
 #========================
 #  Project setup
@@ -20,8 +20,9 @@ endif()
 #=============================
 option(DISABLE_PCAP_PARSE         "Disable PCAP file parse" OFF) 
 option(ENABLE_TRANSFORM           "Enable transform functions" OFF)
+option(ENABLE_IMU_DATA_PARSE           "Enable imu data parse" OFF)
 
-option(ENABLE_DOUBLE_RCVBUF       "Enable double size of RCVBUF" OFF)
+option(ENABLE_MODIFY_RECVBUF       "Enable modify size of RCVBUF" OFF)
 option(ENABLE_WAIT_IF_QUEUE_EMPTY "Enable waiting for a while in handle thread if the queue is empty" OFF)
 option(ENABLE_EPOLL_RECEIVE       "Receive packets with epoll() instead of select()" OFF)
 
@@ -33,7 +34,7 @@ option(ENABLE_DIFOP_PARSE         "Enable parsing DIFOP Packet" OFF)
 #=============================
 #  Compile Demos, Tools, Tests
 #=============================
-option(COMPILE_DEMOS "Build rs_driver demos" OFF)
+option(COMPILE_DEMOS "Build rs_driver demos" ON)
 option(COMPILE_TOOLS "Build rs_driver tools" OFF)
 option(COMPILE_TOOL_VIEWER "Build point cloud visualization tool" OFF)
 option(COMPILE_TOOL_PCDSAVER "Build point cloud pcd saver tool" OFF)
@@ -147,13 +148,23 @@ if(${ENABLE_TRANSFORM})
 
 endif(${ENABLE_TRANSFORM})
 
+if(${ENABLE_IMU_DATA_PARSE})
+
+  message(=============================================================)
+  message("-- Enable imu data parse.")
+  message(=============================================================)
+
+  add_definitions("-DENABLE_IMU_DATA_PARSE")
+
+endif(${ENABLE_IMU_DATA_PARSE})
+
 #============================
 #  Build Demos, Tools, Tests
 #============================
 
-if(${ENABLE_DOUBLE_RCVBUF})
-  add_definitions("-DENABLE_DOUBLE_RCVBUF")
-endif(${ENABLE_DOUBLE_RCVBUF})
+if(${ENABLE_MODIFY_RECVBUF})
+  add_definitions("-DENABLE_MODIFY_RECVBUF")
+endif(${ENABLE_MODIFY_RECVBUF})
 
 if(${ENABLE_WAIT_IF_QUEUE_EMPTY})
   add_definitions("-DENABLE_WAIT_IF_QUEUE_EMPTY")

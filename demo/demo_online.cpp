@@ -48,6 +48,9 @@ using namespace robosense::lidar;
 SyncQueue<std::shared_ptr<PointCloudMsg>> free_cloud_queue;
 SyncQueue<std::shared_ptr<PointCloudMsg>> stuffed_cloud_queue;
 
+SyncQueue<std::shared_ptr<ImuData>> free_imu_data_queue;
+SyncQueue<std::shared_ptr<ImuData>> stuffed_imu_data_queue;
+uint32_t imu_cnt = 0;
 //
 // @brief point cloud callback function. The caller should register it to the lidar driver.
 //        Via this fucntion, the driver gets an free/unused point cloud message from the caller.
@@ -77,7 +80,50 @@ void driverReturnPointCloudToCallerCallback(std::shared_ptr<PointCloudMsg> msg)
   //       so please DO NOT do time-consuming task here. Instead, process it in caller's own thread. (see processCloud() below)
   stuffed_cloud_queue.push(msg);
 }
+std::shared_ptr<ImuData> driverGetIMUDataFromCallerCallback(void)
+{
+  std::shared_ptr<ImuData> msg = free_imu_data_queue.pop();
+  if (msg.get() != NULL)
+  {
+    return msg;
+  }
 
+  return std::make_shared<ImuData>();
+}
+
+
+void driverReturnImuDataToCallerCallback(const std::shared_ptr<ImuData>& msg)
+{
+  stuffed_imu_data_queue.push(msg);
+}
+bool to_exit_process = false;
+void processImuData(void)
+{
+  while (!to_exit_process)
+  {
+    std::shared_ptr<ImuData> msg = stuffed_imu_data_queue.popWait();
+    if (msg.get() == NULL)
+    {
+      continue;
+    }
+
+    // Well, it is time to process the point cloud msg, even it is time-consuming.
+    RS_MSG << "msg: " << imu_cnt << " imu data ts: " <<std::dec<<std::to_string(msg->timestamp) << RS_REND;
+
+    imu_cnt++;
+#if 0
+    RS_DEBUG  <<"imu data: " << " , linear_a_x" << msg->linear_acceleration_x 
+      << " , linear_a_y " << msg->linear_acceleration_y << "  , linear_a_z" << msg->linear_acceleration_z   
+      << " , angular_v_x " << msg->angular_velocity_x << " , angular_v_y" << msg->angular_velocity_y 
+      << " , angular_v_z" <<msg->angular_velocity_z << RS_REND;
+#endif
+
+    free_imu_data_queue.push(msg);
+
+
+  }
+
+}
 //
 // @brief exception callback function. The caller should register it to the lidar driver.
 //        Via this function, the driver inform the caller that something happens.
@@ -90,7 +136,7 @@ void exceptionCallback(const Error& code)
   RS_WARNING << code.toString() << RS_REND;
 }
 
-bool to_exit_process = false;
+
 void processCloud(void)
 {
   while (!to_exit_process)
@@ -114,6 +160,8 @@ void processCloud(void)
 #endif
 
     free_cloud_queue.push(msg);
+
+
   }
 }
 
@@ -124,15 +172,20 @@ int main(int argc, char* argv[])
   RS_TITLE << "------------------------------------------------------" << RS_REND;
 
   RSDriverParam param;                  ///< Create a parameter object
-  param.input_type = InputType::ONLINE_LIDAR;
+  param.input_type = InputType::PCAP_FILE;
   param.input_param.msop_port = 6699;   ///< Set the lidar msop port number, the default is 6699
   param.input_param.difop_port = 7788;  ///< Set the lidar difop port number, the default is 7788
-  param.lidar_type = LidarType::RSM1;   ///< Set the lidar type. Make sure this type is correct
+  param.input_param.imu_port = 6688;
+  param.lidar_type = LidarType::RSAIRY;   ///< Set the lidar type. Make sure this type is correct
+  param.input_param.pcap_path = "/home/sti/PCAP/test_pcap/0350/test1.pcap";
   param.print();
-
+   
   LidarDriver<PointCloudMsg> driver;               ///< Declare the driver object
   driver.regPointCloudCallback(driverGetPointCloudFromCallerCallback, driverReturnPointCloudToCallerCallback); ///< Register the point cloud callback functions
   driver.regExceptionCallback(exceptionCallback);  ///< Register the exception callback function
+#ifdef ENABLE_IMU_DATA_PARSE
+  driver.regImuDataCallback(driverGetIMUDataFromCallerCallback, driverReturnImuDataToCallerCallback);
+#endif
   if (!driver.init(param))                         ///< Call the init function
   {
     RS_ERROR << "Driver Initialize Error..." << RS_REND;
@@ -140,7 +193,9 @@ int main(int argc, char* argv[])
   }
 
   std::thread cloud_handle_thread = std::thread(processCloud);
-
+#ifdef ENABLE_IMU_DATA_PARSE 
+  std::thread imuData_handle_thread = std::thread(processImuData);
+#endif
   driver.start();  ///< The driver thread will start
   RS_DEBUG << "RoboSense Lidar-Driver Linux online demo start......" << RS_REND;
 
@@ -152,6 +207,14 @@ int main(int argc, char* argv[])
   to_exit_process = true;
   cloud_handle_thread.join();
 #else
+  std::this_thread::sleep_for(std::chrono::seconds(2));
+  DeviceInfo deviceInfo;
+  if(driver.getDeviceInfo(deviceInfo))
+  {
+    RS_DEBUG << "qx: " <<  std::fixed << std::setprecision(7)  << deviceInfo.qx  << ",qy:" << deviceInfo.qy << ",qz:" << deviceInfo.qz << ",qw:" << deviceInfo.qw  << ",x:" << deviceInfo.x << ",y:" << deviceInfo.y << ",z:" << deviceInfo.z << std::endl;
+  }else{
+    RS_WARNING << "get device info failed" << RS_REND;
+  }
   while (true)
   {
     std::this_thread::sleep_for(std::chrono::seconds(1));
