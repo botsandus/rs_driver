@@ -186,22 +186,34 @@ inline void InputPcap::recvPacket()
     if (pcap_offline_filter(&msop_filter_, header, pkt_data) != 0)
     {
       std::shared_ptr<Buffer> pkt = cb_get_pkt_(ETH_LEN);
-      memcpy(pkt->data(), pkt_data + pcap_offset_, header->len - pcap_offset_ - pcap_tail_);
-      pkt->setData(0, header->len - pcap_offset_ - pcap_tail_);
+      int dataLen = header->len - pcap_offset_ - pcap_tail_;
+      if (dataLen < 0) {
+            continue;
+      }
+      memcpy(pkt->data(), pkt_data + pcap_offset_, dataLen);
+      pkt->setData(0, dataLen);
       pushPacket(pkt);
     }
     else if (difop_filter_valid_ && (pcap_offline_filter(&difop_filter_, header, pkt_data) != 0))
     {
+      int dataLen = header->len - pcap_offset_ - pcap_tail_;
+      if (dataLen < 0) {
+            continue;
+      }
       std::shared_ptr<Buffer> pkt = cb_get_pkt_(ETH_LEN);
-      memcpy(pkt->data(), pkt_data + pcap_offset_, header->len - pcap_offset_ - pcap_tail_);
-      pkt->setData(0, header->len - pcap_offset_ - pcap_tail_);
+      memcpy(pkt->data(), pkt_data + pcap_offset_, dataLen);
+      pkt->setData(0, dataLen);
       pushPacket(pkt);
     }
     else if (imu_filter_valid_ && (pcap_offline_filter(&imu_filter_, header, pkt_data) != 0))
     {
+      int dataLen = header->len - pcap_offset_ - pcap_tail_;
+      if (dataLen < 0) {
+            continue;
+      }
       std::shared_ptr<Buffer> pkt = cb_get_pkt_(ETH_LEN);
-      memcpy(pkt->data(), pkt_data + pcap_offset_, header->len - pcap_offset_ - pcap_tail_);
-      pkt->setData(0, header->len - pcap_offset_ - pcap_tail_);
+      memcpy(pkt->data(), pkt_data + pcap_offset_, dataLen);
+      pkt->setData(0, dataLen);
       pushPacket(pkt);
     }
     else

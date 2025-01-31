@@ -190,44 +190,28 @@ inline RSDecoderMechConstParam& DecoderRSAIRY<T_PointCloud>::getConstParam()
       , 0.005f // distance resolution
       , 0.0625f // temperature resolution
       // lens center
-      , 0.0066f // RX
-      , 0.0455f // RY
-      , 0.0075f // RZ
+      , 0.0108f // RX
+      , 0.00375f // RY
+      , 0.06056f // RZ
   };
 
   INIT_ONLY_ONCE();
 
   float blk_ts = 111.080f;
-  // float firing_tss[] = 
-  // {
-  //   0.00f,  0.00f,  0.00f,  0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 
-  //   7.616f, 7.616f, 7.616f, 7.616f, 7.616f,7.616f,7.616f,7.616f,
-  //   16.184f, 16.184f, 16.184f, 16.184f, 16.184f, 16.184f, 16.184f, 16.184f,
-  //   24.752f, 24.752f, 24.752f, 24.752f, 24.752f, 24.752f, 24.752f, 24.752f,
-  //   33.320f, 33.320f, 33.320f, 33.320f, 33.320f, 33.320f, 33.320f, 33.320f,
-  //   42.840f, 42.840f, 42.840f, 42.840f, 42.840f, 42.840f, 42.840f, 42.840f,
-  //   52.360f, 52.360f, 52.360f, 52.360f, 52.360f, 52.360f, 52.360f, 52.360f,
-  //   61.880f, 61.880f, 61.880f, 61.880f, 61.880f, 61.880f, 61.880f, 61.880f,
-  //   71.400f, 71.400f, 71.400f, 71.400f, 71.400f, 71.400f, 71.400f, 71.400f,
-  //   79.968f, 79.968f, 79.968f, 79.968f, 79.968f, 79.968f, 79.968f, 79.968f,
-  //   88.536f, 88.536f, 88.536f, 88.536f, 88.536f, 88.536f, 88.536f, 88.536f,
-  //   97.104f, 97.104f, 97.104f, 97.104f, 97.104f, 97.104f, 97.104f, 97.104f,
-  // };
-
   float firing_tss[] = 
   {
     0.00f,  0.00f,  0.00f,  0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 
-    0.00f,  0.00f,  0.00f,  0.00f, 0.00f, 0.00f, 0.00f, 0.00f,
-    17.424f, 17.424f, 17.424f, 17.424f, 17.424f, 17.424f, 17.424f, 17.424f,
-    17.424f, 17.424f, 17.424f, 17.424f, 17.424f, 17.424f, 17.424f, 17.424f,
-    34.848f, 34.848f, 34.848f, 34.848f, 34.848f, 34.848f, 34.848f, 34.848f,
-    34.848f, 34.848f, 34.848f, 34.848f, 34.848f, 34.848f, 34.848f, 34.848f,
-    52.272f, 52.272f, 52.272f, 52.272f, 52.272f, 52.272f, 52.272f, 52.272f,
-    52.272f, 52.272f, 52.272f, 52.272f, 52.272f, 52.272f, 52.272f, 52.272f,
-    69.696f, 69.696f, 69.696f, 69.696f, 69.696f, 69.696f, 69.696f, 69.696f,
-    69.696f, 69.696f, 69.696f, 69.696f, 69.696f, 69.696f, 69.696f, 69.696f,
-    87.120f, 87.120f, 87.120f, 87.120f, 87.120f, 87.120f, 87.120f, 87.120f,
-    87.120f, 87.120f, 87.120f, 87.120f, 87.120f, 87.120f, 87.120f, 87.120f,
+    7.616f, 7.616f, 7.616f, 7.616f, 7.616f,7.616f,7.616f,7.616f,
+    16.184f, 16.184f, 16.184f, 16.184f, 16.184f, 16.184f, 16.184f, 16.184f,
+    24.752f, 24.752f, 24.752f, 24.752f, 24.752f, 24.752f, 24.752f, 24.752f,
+    33.320f, 33.320f, 33.320f, 33.320f, 33.320f, 33.320f, 33.320f, 33.320f,
+    42.840f, 42.840f, 42.840f, 42.840f, 42.840f, 42.840f, 42.840f, 42.840f,
+    52.360f, 52.360f, 52.360f, 52.360f, 52.360f, 52.360f, 52.360f, 52.360f,
+    61.880f, 61.880f, 61.880f, 61.880f, 61.880f, 61.880f, 61.880f, 61.880f,
+    71.400f, 71.400f, 71.400f, 71.400f, 71.400f, 71.400f, 71.400f, 71.400f,
+    79.968f, 79.968f, 79.968f, 79.968f, 79.968f, 79.968f, 79.968f, 79.968f,
+    88.536f, 88.536f, 88.536f, 88.536f, 88.536f, 88.536f, 88.536f, 88.536f,
+    97.104f, 97.104f, 97.104f, 97.104f, 97.104f, 97.104f, 97.104f, 97.104f,
   };
 
   param.BLOCK_DURATION = blk_ts / 1000000;
@@ -449,24 +433,26 @@ inline bool DecoderRSAIRY<T_PointCloud>::internDecodeMsopPkt(const uint8_t* pack
 
       int32_t angle_vert = this->chan_angles_.vertAdjust(chan_id);
       int32_t angle_horiz_final = this->chan_angles_.horizAdjust(chan_id, angle_horiz);
-      float distance = ntohs(channel.distance) * this->const_param_.DISTANCE_RES;
+      uint16_t u16RawDistance = ntohs(channel.distance);
+      uint16_t u16Distance = u16RawDistance & 0x3FFF;
+      uint8_t tag = (u16RawDistance >> 14) & 0x03;
+      float distance = u16Distance * this->const_param_.DISTANCE_RES;
       
       if (this->distance_section_.in(distance) && this->scan_section_.in(angle_horiz_final))
       {
       
-        float x = distance * COS(angle_vert) * COS(angle_horiz_final) + this->mech_const_param_.RX;
-        float y = -distance * COS(angle_vert) * SIN(angle_horiz_final) - this->mech_const_param_.RY;
+        float x = distance * COS(angle_vert) * COS(angle_horiz_final) + this->lidar_lens_center_Rxy_* COS(angle_horiz);
+        float y = -distance * COS(angle_vert) * SIN(angle_horiz_final) - this->lidar_lens_center_Rxy_* SIN(angle_horiz);
         float z = distance * SIN(angle_vert) + this->mech_const_param_.RZ;
         this->transformPoint(x, y, z);
         typename T_PointCloud::PointT point;
         setX(point, x);
         setY(point, y);
         setZ(point, z);
-
         setIntensity(point, channel.intensity);
         setTimestamp(point, chan_ts);
         setRing(point, this->chan_angles_.toUserChan(chan_id));
-
+        setTag(point, tag);
         this->point_cloud_->points.emplace_back(point);
       }
       else if (!this->param_.dense_points)
@@ -477,6 +463,7 @@ inline bool DecoderRSAIRY<T_PointCloud>::internDecodeMsopPkt(const uint8_t* pack
         setZ(point, NAN);
         setIntensity(point, 0);
         setTimestamp(point, chan_ts);
+        setTag(point, tag);
         setRing(point, this->chan_angles_.toUserChan(chan_id));
         this->point_cloud_->points.emplace_back(point);
       }

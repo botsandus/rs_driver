@@ -41,6 +41,7 @@ struct PointXYZI
   float y;
   float z;
   uint16_t intensity;
+  uint8_t tag;
 };
 
 struct PointXYZIRT
@@ -51,6 +52,7 @@ struct PointXYZIRT
   uint16_t intensity;
   uint16_t ring;
   double timestamp;
+  uint8_t tag;
 };
 
 template <typename T_Point>

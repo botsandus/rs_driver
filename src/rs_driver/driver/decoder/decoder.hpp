@@ -321,6 +321,7 @@ protected:
   double prev_point_ts_; // timestamp of previous point
   double first_point_ts_; // timestamp of first point
   bool is_get_temperature_{false};
+
 };
 
 template <typename T_PointCloud>
