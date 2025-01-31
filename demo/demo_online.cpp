@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
   param.input_type = InputType::PCAP_FILE;
   param.input_param.msop_port = 6699;   ///< Set the lidar msop port number, the default is 6699
   param.input_param.difop_port = 7788;  ///< Set the lidar difop port number, the default is 7788
-  param.input_param.imu_port = 6688;
+  param.input_param.imu_port = 6688;   ///< Set the lidar imu port number, the default is 6688
   param.lidar_type = LidarType::RSAIRY;   ///< Set the lidar type. Make sure this type is correct
   param.input_param.pcap_path = "/home/sti/PCAP/test_pcap/0350/test1.pcap";
   param.print();

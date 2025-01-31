@@ -1,4 +1,6 @@
 build*
+out*
+CMakePresets.json
 .vscode
 .vs
 CMakeSettings.json
