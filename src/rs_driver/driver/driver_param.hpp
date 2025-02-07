@@ -37,6 +37,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <map>
 #include <cstring>
+#include <cstdint>
+
 namespace robosense
 {
 namespace lidar
