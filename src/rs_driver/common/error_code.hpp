@@ -70,6 +70,9 @@ enum ErrCode
   ERRCODE_WRONGIMUID    = 0x4C,  ///< IMU Packet ID is wrong
   ERRCODE_WRONGPCAPPARSE  = 0x4D,   ///< Parse msop data frome pcap file failed
 
+  ERRCODE_UNSUPPORTEDPROFILE = 0x4E, ///< Unvalidated sensor model/return mode
+  ERRCODE_INVALIDPACKET = 0x4F, ///< Invalid packet contents
+
   // error
   ERRCODE_STARTBEFOREINIT = 0x80,  ///< User calls start() before init()
   ERRCODE_PCAPWRONGPATH   = 0x81,  ///< Path of pcap file is wrong
@@ -142,6 +145,11 @@ struct Error
         return "ERRCODE_WRONGIMUID";
       case ERRCODE_WRONGPCAPPARSE:
         return "ERRCODE_WRONGPCAPPARSE";
+
+      case ERRCODE_UNSUPPORTEDPROFILE:
+        return "ERRCODE_UNSUPPORTEDPROFILE";
+      case ERRCODE_INVALIDPACKET:
+        return "ERRCODE_INVALIDPACKET";
 
       // error
       case ERRCODE_STARTBEFOREINIT:

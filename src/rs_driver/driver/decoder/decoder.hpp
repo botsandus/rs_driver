@@ -40,6 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <rs_driver/driver/decoder/basic_attr.hpp>
 #include <rs_driver/driver/decoder/split_strategy.hpp>
 #include "rs_driver/msg/imu_data_msg.hpp"
+#include <rs_driver/msg/safety_airy_status.hpp>
 #ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES  // for VC++, required to use const M_IP in <math.h>
 #endif
@@ -281,7 +282,15 @@ public:
   void regCallback(const std::function<void(const Error&)>& cb_excep,
                    const std::function<void(uint16_t, double)>& cb_split_frame);
   void regImuCallback(const std::function<void()>& cb_imu_data);
+  void regSafetyAiryStatusCallback(const std::function<void(const SafetyAiryStatus&)>& cb)
+  { cb_safety_status_ = cb; }
   virtual bool isNewFrame(const uint8_t* packet);
+  bool isNewFrame(const uint8_t* packet, size_t size)
+  {
+    return size == const_param_.MSOP_LEN &&
+           std::memcmp(packet, const_param_.MSOP_ID, const_param_.MSOP_ID_LEN) == 0 &&
+           isNewFrame(packet);
+  }
   bool isNewFrameCommon(const uint8_t* packet);
 
   std::shared_ptr<T_PointCloud> point_cloud_;  // accumulated point cloud currently
@@ -295,6 +304,16 @@ public:
 protected:
 #endif
 
+  virtual bool checkMsopCrc(const uint8_t* pkt, size_t size)
+  {
+#ifdef ENABLE_CRC32_CHECK
+    return isCrc32Correct(pkt, size);
+#else
+    return true;
+#endif
+  }
+
+  std::function<void(const SafetyAiryStatus&)> cb_safety_status_;
   double cloudTs();
 
   RSDecoderConstParam const_param_;  // const param
@@ -500,13 +519,11 @@ inline bool Decoder<T_PointCloud>::processMsopPkt(const uint8_t* pkt, size_t siz
     return false;
   }
 
-#ifdef ENABLE_CRC32_CHECK
-  if (!isCrc32Correct(pkt, size))
+  if (!checkMsopCrc(pkt, size))
   {
     LIMIT_CALL(this->cb_excep_(Error(ERRCODE_WRONGCRC32)), 1);
     return false;
   }
-#endif
 
   return decodeMsopPkt(pkt, size);
 }

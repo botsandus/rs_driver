@@ -38,6 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <cstring>
 #include <unordered_map>
+#include <cstdint>
 namespace robosense
 {
 namespace lidar
@@ -58,6 +59,7 @@ enum LidarType  ///< LiDAR type
   RSP128,
   RSP80,
   RSP48,
+  RSSAFETYAIRY,  // Append to preserve existing model values.
 
   // mems
   RS_MEMS = 0x20,
@@ -94,6 +96,7 @@ inline std::string lidarTypeToStr(const LidarType& type)
         {LidarType::RS32, "RS32"},
         {LidarType::RSBP, "RSBP"},
         {LidarType::RSAIRY, "RSAIRY"},
+        {LidarType::RSSAFETYAIRY, "RSSAFETYAIRY"},
         {LidarType::RSHELIOS, "RSHELIOS"},
         {LidarType::RSHELIOS_16P, "RSHELIOS_16P"},
         {LidarType::RS128, "RS128"},
@@ -140,6 +143,7 @@ inline LidarType strToLidarType(const std::string& type)
         {"RSE1", LidarType::RSE1},
         {"RSMX", LidarType::RSMX},
         {"RSAIRY", LidarType::RSAIRY},
+        {"RSSAFETYAIRY", LidarType::RSSAFETYAIRY},
         {"RSM1_JUMBO", LidarType::RSM1_JUMBO},
     };
 
@@ -149,7 +153,7 @@ inline LidarType strToLidarType(const std::string& type)
     } else {
       RS_ERROR << "Wrong lidar type: " << type << RS_REND;
       RS_ERROR << "Please give correct type: RS16, RS32, RSBP, RSHELIOS, RSHELIOS_16P, RS48, RS80, RS128, RSP128, RSP80, RSP48, "
-              << "RSM1, RSM1_JUMBO, RSM2,RSM3, RSE1, RSMX, RSAIRY." 
+              << "RSM1, RSM1_JUMBO, RSM2,RSM3, RSE1, RSMX, RSAIRY, RSSAFETYAIRY."
               << RS_REND;
       exit(-1);
     }
