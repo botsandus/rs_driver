@@ -79,6 +79,10 @@ public:
   }
 
 
+  // Register before init(). Status is delivered from the decoder thread.
+  inline void regSafetyAiryStatusCallback(const std::function<void(const SafetyAiryStatus&)>& cb)
+  { driver_ptr_->regSafetyAiryStatusCallback(cb); }
+
   /**
    * @brief Register the lidar difop packet message callback function to driver. When lidar difop packet message is
    * ready, this function will be called

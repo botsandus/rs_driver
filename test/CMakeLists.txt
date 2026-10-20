@@ -33,4 +33,11 @@ add_executable(rs_driver_test
 target_link_libraries(rs_driver_test
                       ${GTEST_LIBRARIES}
                       ${EXTERNAL_LIBS})
+
+add_executable(decoder_safety_airy_test decoder_safety_airy_test.cpp)
+target_compile_definitions(decoder_safety_airy_test PRIVATE
+  SAFETY_AIRY_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/res/safety_airy"
+  ENABLE_CRC32_CHECK)
+target_link_libraries(decoder_safety_airy_test GTest::gtest_main ${EXTERNAL_LIBS})
+add_test(NAME decoder_safety_airy COMMAND decoder_safety_airy_test)
         

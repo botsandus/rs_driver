@@ -204,6 +204,12 @@ inline void InputPcap::recvPacket()
       }
     }
 
+    if (ret == 0) continue;
+    if (header->caplen < header->len || header->len < pcap_offset_ + pcap_tail_)
+    {
+      cb_excep_(Error(ERRCODE_WRONGPCAPPARSE));
+      continue;
+    }
     if (pcap_offline_filter(&msop_filter_, header, pkt_data) != 0)
     {
       int dataLen = (int)(header->len - pcap_offset_ - pcap_tail_);
@@ -221,7 +227,7 @@ inline void InputPcap::recvPacket()
       memcpy(pkt->data(), pkt_data + pcap_offset_, dataLen);
       pkt->setData(0, dataLen);
 
-      if (cb_pcap_split_frame_(pkt->data()))
+      if (cb_pcap_split_frame_ && cb_pcap_split_frame_(pkt->data(), pkt->dataSize()))
       {
         auto end = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start_time);
