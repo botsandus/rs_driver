@@ -121,6 +121,46 @@ TEST_F(SafetyAiry, TruncationAndUnsupportedModeDoNotAppendPoints)
   EXPECT_EQ(decoder->status_.rejected_packets, 1u);
 }
 
+TEST_F(SafetyAiry, B1RearCaptureDecodesWithItsOwnCalibration)
+{
+  msop = fixture("b1_rear_msop.bin"); difop = fixture("b1_rear_difop.bin");
+  ASSERT_EQ(msop.size(), 1240u); ASSERT_EQ(difop.size(), 1248u);
+  ASSERT_EQ(msop[31], 0x0b); ASSERT_EQ(msop[32], 2);
+  calibrate(); scan();
+  ASSERT_EQ(decoder->point_cloud_->points.size(), 288u);
+  EXPECT_EQ(decoder->status_.msop_packets, 1u);
+  EXPECT_EQ(decoder->status_.crc_errors, 0u);
+  // Independent trig calculation from this packet and its factory calibration.
+  const auto& point = decoder->point_cloud_->points[0];
+  EXPECT_NEAR(point.x, -1.554526196, 1e-5);
+  EXPECT_NEAR(point.y, 0.521942336, 1e-5);
+  EXPECT_NEAR(point.z, 0.04955, 1e-5);
+}
+
+TEST_F(SafetyAiry, B1FrontCaptureDecodesWithItsOwnCalibration)
+{
+  msop = fixture("b1_front_msop.bin"); difop = fixture("b1_front_difop.bin");
+  ASSERT_EQ(msop.size(), 1240u); ASSERT_EQ(difop.size(), 1248u);
+  ASSERT_EQ(msop[31], 0x0b); ASSERT_EQ(msop[32], 2);
+  calibrate(); scan();
+  ASSERT_EQ(decoder->point_cloud_->points.size(), 288u);
+  EXPECT_EQ(decoder->status_.msop_packets, 1u);
+  EXPECT_EQ(decoder->status_.crc_errors, 0u);
+  EXPECT_TRUE(std::isnan(decoder->point_cloud_->points[0].x));
+  const auto& point = decoder->point_cloud_->points[12];
+  EXPECT_NEAR(point.x, 7.574985406, 1e-5);
+  EXPECT_NEAR(point.y, -7.819188976, 1e-5);
+  EXPECT_NEAR(point.z, 2.187452878, 1e-5);
+}
+
+TEST_F(SafetyAiry, UnknownModelIdentifierStillRejectsValidCrcPacket)
+{
+  calibrate();
+  msop[31] = 0x0c; fixCrc(msop, 1230); scan();
+  EXPECT_TRUE(decoder->point_cloud_->points.empty());
+  EXPECT_EQ(decoder->status_.rejected_packets, 1u);
+}
+
 TEST_F(SafetyAiry, LaterBrokenBlockCannotPartiallyPublishPacket)
 {
   calibrate();

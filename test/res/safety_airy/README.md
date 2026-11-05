@@ -19,3 +19,13 @@ establishes the distance mask, optical offsets and factory firing schedule.
 `3bed5245949c761d7e7812b65905d9ff8d4238ea606797003d109004dd360606`)
 establishes the CRC algorithm, separately validated against 35,838 MSOP and
 1,200 DIFOP packets. The DLLs are not included.
+
+`b1_rear_msop.bin` / `b1_rear_difop.bin` and `b1_front_msop.bin` /
+`b1_front_difop.bin` were captured from two updated B1 samples on 2026-11-05.
+Serials are `300bbfcd0061` and `300bbfcd0071`. Both report overall firmware
+`00040400`, application `b1720003`, and MSOP type `0x0b` at byte 31. Their
+96-channel profile, paired blocks, range encoding and microsecond timestamp
+format match the existing decoder. A two-second capture checked 11,961 MSOP
+and 398 DIFOP packets without CRC, framing or paired-block errors. Geometry
+test values are independently calculated from each unit's captured ranges
+and DIFOP calibration; they are not a physical calibration certification.

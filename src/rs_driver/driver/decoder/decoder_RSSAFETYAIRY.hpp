@@ -155,8 +155,10 @@ private:
   }
   bool validProfile(const uint8_t* p) const
   {
+    // Updated B1 samples (overall 00040400 / app b1720003) report type 0x0b.
+    // Captures retain the same 96-channel, paired-block profile and CRC layout.
     return p[16] == 0 && p[17] == 1 && p[32] == 2 &&
-           (p[31] == 0x10 || p[31] == 0x01);
+           (p[31] == 0x10 || p[31] == 0x01 || p[31] == 0x0b);
   }
   SafetyAiryStatus status_;
   bool clock_ready_ = false, sequence_ready_ = false;
